@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.decomposition import PCA
 import os
 
 
@@ -46,7 +47,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-knn = KNeighborsClassifier(n_neighbors=5)
+knn = KNeighborsClassifier(n_neighbors=10)
 knn.fit(X_train, y_train)
 y_pred = knn.predict(X_test)
 
@@ -57,18 +58,54 @@ print(confusion_matrix(y_test, y_pred))
 
 # Display the graphs
 
-def plot_knn_samples(X_test, y_test, y_pred, n_samples=2):
-    sample_indices = np.random.choice(len(X_test), n_samples, replace=False)
-    plt.figure(figsize=(12, 8))
+def plot_knn_neighbors(knn, X_train, y_train, X_test, y_test, index=0, pca=None):
     
-    for i, idx in enumerate(sample_indices):
-        plt.subplot(n_samples, 1, i+1)
-        plt.plot(X_test[idx], label=f"True: {y_test[idx]}, Pred: {y_pred[idx]}")
-        plt.legend()
-        plt.title(f"ECG Sample {idx}")
+    if index < 0 or index >= len(X_test):
+        raise ValueError(f"index must be in [0, {len(X_test)-1}]")
+
+    if pca is None:
+        pca = PCA(n_components=2)
+        X_reduced = pca.fit_transform(np.vstack([X_train, X_test]))
+    else:
+        X_reduced = pca.transform(np.vstack([X_train, X_test]))
+
+    X_train_2d = X_reduced[:len(X_train)]
+    X_test_2d  = X_reduced[len(X_train):]
+
+    distances, indices = knn.kneighbors([X_test[index]])
+    distances = distances[0]
+    indices = indices[0]
+
+    print(f"\nTest={index}")
+    print(f"True label = {y_test[index]}")
+    print("k neighbor :", indices)
+    print("Distances :", np.round(distances, 4))
+    print("Neighbors labels :", y_train[indices])
+
     
-    plt.tight_layout()
+    plt.figure(figsize=(10, 7))
+    scatter = plt.scatter(
+        X_train_2d[:,0], X_train_2d[:,1],
+        c=y_train, cmap='coolwarm', s=12, alpha=0.4, label='Train'
+    )
+
+    plt.scatter(
+        X_test_2d[index,0], X_test_2d[index,1],
+        c='green', s=200, edgecolor='black', label=f"Test index={index} ,(true={y_test[index]})", zorder = 5
+    )
+
+
+    plt.scatter(
+        X_train_2d[indices,0], X_train_2d[indices,1],
+        c='yellow', s=140, edgecolor='black', label=f"{knn.n_neighbors} voisins (train)"
+    )
+
+    plt.title("KNN — point test + k voisins (PCA 2D)")
+    plt.xlabel("PC1")
+    plt.ylabel("PC2")
+    plt.legend()
+    plt.grid(True)
     plt.show()
 
-
-plot_knn_samples(X_test, y_test, y_pred, n_samples=2)
+chosen_index = 10 if len(X_test) > 10 else 0
+plot_knn_neighbors(knn, X_train, y_train, X_test, y_test, index=chosen_index)

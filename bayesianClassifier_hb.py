@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.naive_bayes import GaussianNB
+from sklearn.manifold import TSNE
 from sklearn.metrics import classification_report, confusion_matrix
 
 path = kagglehub.dataset_download("shayanfazeli/heartbeat")
@@ -34,24 +35,29 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-decision_tree = DecisionTreeClassifier(max_depth=10, random_state=42)
-decision_tree.fit(X_train, y_train)
-
-y_pred = decision_tree.predict(X_test)
+gnb = GaussianNB()
+gnb.fit(X_train, y_train)
+y_pred = gnb.predict(X_test)
 
 print("\n--- Classification Report ---")
 print(classification_report(y_test, y_pred))
 print("\n--- Confusion Matrix ---")
 print(confusion_matrix(y_test, y_pred))
 
-plt.figure(figsize=(25,15))
-plot_tree(
-    decision_tree,
-    filled=True,
-    feature_names=[f"x{i}" for i in range(X.shape[1])],
-    class_names=['Normal', 'Anomalie'],
-    rounded=True,
-    fontsize=10
-)
-plt.show()
+tsne = TSNE(n_components=2, random_state=42, perplexity=30, max_iter=1000)
+X_all = np.vstack([X_train, X_test])
+X_all_tsne = tsne.fit_transform(X_all)
 
+X_train_tsne = X_all_tsne[:len(X_train)]
+X_test_tsne = X_all_tsne[len(X_train):]
+
+plt.figure(figsize=(10,6))
+plt.scatter(X_train_tsne[:,0], X_train_tsne[:,1], c=y_train, cmap='coolwarm', alpha=0.3, s=20, label='Train')
+plt.scatter(X_test_tsne[y_test==y_pred,0], X_test_tsne[y_test==y_pred,1], c='green', s=30, alpha=0.6, label='Test Correct')
+plt.scatter(X_test_tsne[y_test!=y_pred,0], X_test_tsne[y_test!=y_pred,1], c='red', s=50, label='Test Incorrect')
+
+plt.xlabel("t-SNE Component 1")
+plt.ylabel("t-SNE Component 2")
+plt.title("Gaussian Naive Bayes - Test Data projected with t-SNE")
+plt.legend()
+plt.show()
