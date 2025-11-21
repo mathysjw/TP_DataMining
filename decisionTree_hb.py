@@ -10,7 +10,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.metrics import classification_report, confusion_matrix
 import os
-
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 
 path = kagglehub.dataset_download("shayanfazeli/heartbeat")
 print("Path:", path)
@@ -53,9 +54,10 @@ y_pred = tree.predict(X_test)
 print("\nClassification Report")
 print(classification_report(y_test, y_pred))
 
-print("\n--- Confusion Matrix ---")
+print("\nConfusion Matrix")
 print(confusion_matrix(y_test, y_pred))
 
+# Display graphs 
 
 def plot_decision_tree_samples(X_test, y_test, y_pred, n_samples=5):
 
@@ -76,5 +78,6 @@ plot_decision_tree_samples(X_test, y_test, y_pred)
 
 plt.figure(figsize=(20, 12))
 plot_tree(tree, filled=True, fontsize=6)
-plt.title("Decision Tree Structure")
+plt.title("Decision Tree")
 plt.show()
+
