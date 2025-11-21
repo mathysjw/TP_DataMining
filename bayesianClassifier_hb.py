@@ -39,9 +39,9 @@ gnb = GaussianNB()
 gnb.fit(X_train, y_train)
 y_pred = gnb.predict(X_test)
 
-print("\n--- Classification Report ---")
+print("\nClassification Report")
 print(classification_report(y_test, y_pred))
-print("\n--- Confusion Matrix ---")
+print("\nConfusion Matrix")
 print(confusion_matrix(y_test, y_pred))
 
 tsne = TSNE(n_components=2, random_state=42, perplexity=30, max_iter=1000)
